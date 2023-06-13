@@ -1,4 +1,4 @@
-pointcloud_to_grid_node:
+pc2_to_grid:
   ros__parameters:
     position_x: -5.0
     position_y: 0.0
@@ -7,7 +7,7 @@ pointcloud_to_grid_node:
     length_y: 80.0
     intensity_factor: 0.2
     height_factor: 1.0
-    cloud_in_topic: "/left_os1/os1_cloud_node/points"
-    mapi_topic_name: "/lidargrid_i"
-    maph_topic_name: "/lidargrid_h"
+    cloud_in_topic: "/map"
+    mapi_topic_name: "/intensity_map"
+    maph_topic_name: "/height_map"
     debug: true

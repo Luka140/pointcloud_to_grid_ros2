@@ -3,7 +3,7 @@ from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
 from sensor_msgs.msg import PointCloud2
 import pcl
-import pcl_conversions
+# import pcl_conversions
 
 class PointXY:
     def __init__(self):
@@ -37,8 +37,7 @@ class GridMap:
         self.intensity_factor = 0.0
         self.height_factor = 0.0
 
-    def initGrid(self, grid):
-        grid.header.seq = 1
+    def initGrid(self, grid : OccupancyGrid):
         grid.header.frame_id = self.frame_out  # TODO
         grid.info.origin.position.z = 0.0
         grid.info.origin.orientation.w = 0.0
@@ -131,8 +130,16 @@ class PointCloudToGridNode(Node):
         self.grid_map.paramRefresh()
 
     def pointcloudCallback(self, msg):
-        out_cloud = pcl.PointCloud.PointXYZI()
-        pcl_conversions.fromPCL(msg, out_cloud)
+        # out_cloud = pcl.PointCloud.PointXYZI()
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
+        # pcl_conversions.fromPCL(msg, out_cloud)
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
+        # rclpy.pcl_conversions.fromPCL(msg, out_cloud)
 
         self.grid_map.initGrid(self.intensity_grid)
         self.grid_map.initGrid(self.height_grid)
