@@ -87,20 +87,16 @@ class PointcloudToGridNode(Node):
 
         # If statement math?
         for out_point in out_cloud:
-            # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
 
             if (out_point.x > 0.01 or out_point.x < -0.01):
-                # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
 
                 if (out_point.x > self.grid_map.bottomright_x and out_point.x < self.grid_map.topleft_x):
-                    # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
 
                     if (out_point.y > self.grid_map.bottomright_y and out_point.y < self.grid_map.topleft_y):
-                        # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
 
                         # Get grid cell indices for the current point
                         cell = self.get_index(out_point.x, out_point.y, self.grid_map)
-                        self.get_logger().error("Cell: ( " + str(cell.x) + " , " + str(cell.y) + " )")
+
                         if (cell.x < self.grid_map.cell_num_x and cell.y < self.grid_map.cell_num_y):
                             ipoints[cell.y * self.grid_map.cell_num_x + cell.x] = out_point.intensity * self.grid_map.intensity_factor
                             hpoints[cell.y * self.grid_map.cell_num_x + cell.x] = out_point.z * self.grid_map.height_factor
@@ -144,8 +140,6 @@ class PointcloudToGridNode(Node):
             point.y = point_data[1]
             point.z = point_data[2]
             point.intensity = point_data[3]
-
-            # self.get_logger().error("Point: ( " + str(point.x) + " , " + str(point.y) + " , " + str(point.z) + " , " + str(point.intensity) + " )")
 
             # Add the point to the list
             points.append(point)
