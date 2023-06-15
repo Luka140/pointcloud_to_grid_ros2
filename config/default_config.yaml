@@ -7,7 +7,7 @@ pc2_to_grid:
     length_y: 80.0
     intensity_factor: 0.2
     height_factor: 1.0
-    cloud_in_topic: "/map"
+    cloud_in_topic: "/velodyne_points"
     mapi_topic_name: "/intensity_map"
     maph_topic_name: "/height_map"
     debug: true

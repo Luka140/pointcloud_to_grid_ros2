@@ -1,14 +1,12 @@
 import rclpy
 from rclpy.node import Node
-from rclpy.parameter import Parameter
-from rclpy.callback_groups import ReentrantCallbackGroup
 from nav_msgs.msg import OccupancyGrid
 from sensor_msgs.msg import PointCloud2
-from std_srvs.srv import Empty
-import pcl
+from rclpy.qos import DurabilityPolicy, qos_profile_system_default
 import math
 import numpy as np
 from pointcloud_to_grid.pointcloud_to_grid_core import GridMap, PointXY, PointXYZI
+from pointcloud_to_grid.point_cloud2 import read_points
 
 
 class PointcloudToGridNode(Node):
@@ -52,14 +50,17 @@ class PointcloudToGridNode(Node):
         self.grid_map.initGrid(self.height_grid)
         self.grid_map.paramRefresh()
 
+        adjusted_policy = qos_profile_system_default
+        adjusted_policy.durability = DurabilityPolicy.TRANSIENT_LOCAL
+
         # Set up Intensity base Grid Publisher
         self.publish_igrid = self.create_publisher(
-            OccupancyGrid, self.grid_map.mapi_topic_name, 1
+            OccupancyGrid, self.grid_map.mapi_topic_name, adjusted_policy
         )
 
         # Set up Height based Grid Publisher
         self.publish_hgrid = self.create_publisher(
-            OccupancyGrid, self.grid_map.maph_topic_name, 1
+            OccupancyGrid, self.grid_map.maph_topic_name, adjusted_policy
         )
 
         # Set up PC2 Subscriber
@@ -67,61 +68,89 @@ class PointcloudToGridNode(Node):
             PointCloud2, self.grid_map.cloud_in_topic, self.pointcloud_callback, 1
         )
 
-    def pointcloud_callback(self, msg):
+    def pointcloud_callback(self, msg : PointCloud2):
         # Setup output cloud
-        out_cloud = PointXYZI()
-        pcl.PCLPointCloud2(msg, out_cloud)
-
+        out_cloud = self.process_point_cloud(msg)
+        # pcl.PCLPointCloud2(msg, out_cloud)
+        # self.get_logger().error(str(len(out_cloud)))
         # Initialize grids
         self.grid_map.initGrid(self.intensity_grid)
         self.grid_map.initGrid(self.height_grid)
 
         # Create point vectors and fill them with values of -128
         ipoints = np.full(
-            (self.grid_map.cell_num_x * self.grid_map.cell_num_y, 1), -128, dtype=np.int8
+            (self.grid_map.cell_num_x * self.grid_map.cell_num_y), -128, dtype=np.int8
         )
         hpoints = np.full(
-            (self.grid_map.cell_num_x * self.grid_map.cell_num_y, 1), -128, dtype=np.int8
+            (self.grid_map.cell_num_x * self.grid_map.cell_num_y), -128, dtype=np.int8
         )
 
         # If statement math?
         for out_point in out_cloud:
+            # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
+
             if (out_point.x > 0.01 or out_point.x < -0.01):
+                # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
+
                 if (out_point.x > self.grid_map.bottomright_x and out_point.x < self.grid_map.topleft_x):
+                    # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
+
                     if (out_point.y > self.grid_map.bottomright_y and out_point.y < self.grid_map.topleft_y):
+                        # self.get_logger().error("Point: ( " + str(out_point.x) + " , " + str(out_point.y) + " , " + str(out_point.z) + " , " + str(out_point.intensity) + " )")
+
                         # Get grid cell indices for the current point
-                        cell = get_index(out_point.x, out_point.y)
+                        cell = self.get_index(out_point.x, out_point.y, self.grid_map)
+                        self.get_logger().error("Cell: ( " + str(cell.x) + " , " + str(cell.y) + " )")
                         if (cell.x < self.grid_map.cell_num_x and cell.y < self.grid_map.cell_num_y):
                             ipoints[cell.y * self.grid_map.cell_num_x + cell.x] = out_point.intensity * self.grid_map.intensity_factor
                             hpoints[cell.y * self.grid_map.cell_num_x + cell.x] = out_point.z * self.grid_map.height_factor
 
                         else:
-                            self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y))
+                            self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y), 5)
 
         # Adjust Grid Headers and set data
         now = self.get_clock().now().to_msg()
 
         self.intensity_grid.header.stamp        = now
-        self.intensity_grid.header.frame_id     = msg.header.frame_id # TODO figure out what this means
+        self.intensity_grid.header.frame_id     = msg.header.frame_id
         self.intensity_grid.info.map_load_time  = now
-        self.intensity_grid.data                = ipoints
+        self.intensity_grid.data                = ipoints.astype(int).tolist()
 
         self.height_grid.header.stamp           = now
-        self.height_grid.header.frame_id        = msg.header.frame_id # TODO figure out what this means
+        self.height_grid.header.frame_id        = msg.header.frame_id
         self.height_grid.info.map_load_time     = now
-        self.height_grid.data                   = hpoints
+        self.height_grid.data                   = ipoints.astype(int).tolist()
 
         # Publish new grids
         self.publish_igrid.publish(self.intensity_grid)
         self.publish_hgrid.publish(self.height_grid)
 
 
-def get_index(x: float, y: float, grid_map: GridMap):
-    ret     = PointXY()
-    ret.x   = int(math.fabs(x - grid_map.topleft_x) / grid_map.cell_size)
-    ret.y   = int(math.fabs(y - grid_map.topleft_y) / grid_map.cell_size)
-    return ret
+    def get_index(self, x: float, y: float, grid_map: GridMap):
+        ret     = PointXY()
+        ret.x   = int(math.fabs(x - grid_map.topleft_x) / grid_map.cell_size)
+        ret.y   = int(math.fabs(y - grid_map.topleft_y) / grid_map.cell_size)
+        return ret
 
+    def process_point_cloud(self, cloud_msg : PointCloud2):
+        points = []
+
+        # Read points from the PointCloud2 message
+        for point_data in read_points(cloud_msg, field_names=['x', 'y', 'z', 'intensity']):
+            point = PointXYZI()
+
+            # Assign values to the PointXYZI object
+            point.x = point_data[0]
+            point.y = point_data[1]
+            point.z = point_data[2]
+            point.intensity = point_data[3]
+
+            # self.get_logger().error("Point: ( " + str(point.x) + " , " + str(point.y) + " , " + str(point.z) + " , " + str(point.intensity) + " )")
+
+            # Add the point to the list
+            points.append(point)
+
+        return points
 
 def main(args=None):
     rclpy.init(args=args)
