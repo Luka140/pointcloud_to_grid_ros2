@@ -45,6 +45,11 @@ class PointcloudToGridNode(Node):
         self.grid_map.mapi_topic_name   = self.get_parameter("mapi_topic_name").get_parameter_value().string_value
         self.grid_map.maph_topic_name   = self.get_parameter("maph_topic_name").get_parameter_value().string_value
 
+        self.max_x  = (self.grid_map.length_x)/2 + self.grid_map.position_x
+        self.min_x  = -(self.grid_map.length_x)/2 + self.grid_map.position_x
+        self.max_y  = (self.grid_map.length_y)/2 + self.grid_map.position_y
+        self.min_y  = -(self.grid_map.length_y)/2 + self.grid_map.position_y
+
         # Set up the Height and Intensity maps and refresh the parameters
         self.grid_map.initGrid(self.intensity_grid)
         self.grid_map.initGrid(self.height_grid)
@@ -69,10 +74,17 @@ class PointcloudToGridNode(Node):
         )
 
     def pointcloud_callback(self, msg : PointCloud2):
+        # Adjust grid dimensions
+        self.grid_map.length_x      = abs(self.max_x) + abs(self.min_x)
+        self.grid_map.length_y      = abs(self.max_y) + abs(self.min_y)
+        self.grid_map.position_x    = (self.max_x + self.min_x)/2
+        self.grid_map.position_y    = (self.max_y + self.min_y)/2
+
+        self.grid_map.paramRefresh()
+        
         # Setup output cloud
         out_cloud = self.process_point_cloud(msg)
-        # pcl.PCLPointCloud2(msg, out_cloud)
-        # self.get_logger().error(str(len(out_cloud)))
+
         # Initialize grids
         self.grid_map.initGrid(self.intensity_grid)
         self.grid_map.initGrid(self.height_grid)
@@ -103,6 +115,37 @@ class PointcloudToGridNode(Node):
 
                         else:
                             self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y), 5)
+
+                    else:
+                        isTop : bool
+                        if (out_point.y > self.grid_map.bottomright_y):
+                            diff    = abs(out_point.y - self.grid_map.bottomright_y)
+                            isTop   = False
+                        else:
+                            diff    = abs(out_point.y - self.grid_map.topleft_y)
+                            isTop   = True
+
+                        if (self.grid_map.length_y + diff > abs(self.max_y) + abs(self.min_y)):
+                            if isTop:
+                                self.max_y = self.max_y + diff
+                            else:
+                                self.min_y = self.min_y - diff
+                
+                else:
+                    isTop : bool
+                    if (out_point.x > self.grid_map.bottomright_x):
+                        diff    = abs(out_point.x - self.grid_map.bottomright_x)
+                        isTop   = False
+                    else:
+                        diff    = abs(out_point.x - self.grid_map.topleft_x)
+                        isTop   = True
+
+                    if (self.grid_map.length_x + diff > abs(self.max_x) + abs(self.min_x)):
+                        if isTop:
+                            self.max_x = self.max_x + diff
+                        else:
+                            self.min_x = self.min_x - diff
+
 
         # Adjust Grid Headers and set data
         now = self.get_clock().now().to_msg()
