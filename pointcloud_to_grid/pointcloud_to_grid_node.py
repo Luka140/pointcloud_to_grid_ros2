@@ -115,7 +115,7 @@ class PointcloudToGridNode(Node):
         self.height_grid.header.stamp           = now
         self.height_grid.header.frame_id        = msg.header.frame_id
         self.height_grid.info.map_load_time     = now
-        self.height_grid.data                   = ipoints.astype(int).tolist()
+        self.height_grid.data                   = hpoints.astype(int).tolist()
 
         # Publish new grids
         self.publish_igrid.publish(self.intensity_grid)
