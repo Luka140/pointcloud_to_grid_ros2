@@ -4,9 +4,6 @@ from nav_msgs.msg import OccupancyGrid
 from sensor_msgs.msg import PointCloud2
 from rclpy.qos import DurabilityPolicy, qos_profile_system_default
 import math
-import numpy as np
-from pointcloud_to_grid.pointcloud_to_grid_core import GridMap, PointXY, PointXYZI
-from pointcloud_to_grid.point_cloud2 import read_points
 
 #         _--"-.
 #      .-"      "-.

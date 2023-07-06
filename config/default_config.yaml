@@ -11,3 +11,13 @@ pc2_to_grid:
     mapi_topic_name: "/intensity_map"
     maph_topic_name: "/height_map"
     debug: true
+
+igrid_interpolation:
+  ros__parameters:
+    unresolved_grid: "/intensity_map"
+    interpolated_grid: "/interpolated_imap"
+
+hgrid_interpolation:
+  ros__parameters:
+    unresolved_grid: "/height_map"
+    interpolated_grid: "/interpolated_hmap"
