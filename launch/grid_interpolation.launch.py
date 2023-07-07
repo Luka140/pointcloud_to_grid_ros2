@@ -52,7 +52,7 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package="pointcloud_to_grid",
             executable="interpolated_grid_node",
-            name="higrid_interpolation",
+            name="hgrid_interpolation",
             output="screen",
             parameters=[
                 param_file

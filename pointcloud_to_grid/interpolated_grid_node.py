@@ -32,21 +32,24 @@ class InterpolatedGridNode(Node):
         self.declare_parameter("unresolved_grid", "/unresolved_grid")
         self.declare_parameter("interpolated_grid", "/interpolated_grid")
 
+        self.unresolved_grid    = self.get_parameter("unresolved_grid").get_parameter_value().string_value
+        self.interpolated_grid  = self.get_parameter("interpolated_grid").get_parameter_value().string_value
+
         # Force Message QOS
         adjusted_policy = qos_profile_system_default
         adjusted_policy.durability = DurabilityPolicy.TRANSIENT_LOCAL
 
         # Set up Interpolated Map Publisher
         self.publish_cheddar = self.create_publisher(
-            OccupancyGrid, self.grid_map.maph_topic_name, adjusted_policy
+            OccupancyGrid, self.interpolated_grid, adjusted_policy
         )
 
         # Set up Swiss Map Subscriber
         self.sub_pc2 = self.create_subscription(
-            PointCloud2, self.grid_map.cloud_in_topic, self.interpolation_callback, 1
+            OccupancyGrid, self.unresolved_grid, self.interpolation_callback, 1
         )
 
-    def pointcloud_callback(self, msg : OccupancyGrid):
+    def interpolation_callback(self, msg : OccupancyGrid):
         self.swiss_grid = msg
 
         # Set the output map parameters to the same as the input ones
