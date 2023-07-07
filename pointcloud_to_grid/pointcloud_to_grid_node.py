@@ -77,8 +77,10 @@ class PointcloudToGridNode(Node):
         # Adjust grid dimensions
         self.grid_map.length_x      = abs(self.max_x) + abs(self.min_x)
         self.grid_map.length_y      = abs(self.max_y) + abs(self.min_y)
-        self.grid_map.position_x    = (self.max_x + self.min_x)/2
-        self.grid_map.position_y    = (self.max_y + self.min_y)/2
+        self.grid_map.position_x    = (self.max_x + self.min_x)/2.0
+        self.grid_map.position_y    = (self.max_y + self.min_y)/2.0
+        self.get_logger().error("Position X: " + str(self.grid_map.position_x))
+        self.get_logger().error("Position Y: " + str(self.grid_map.position_y))
 
         self.grid_map.paramRefresh()
         
