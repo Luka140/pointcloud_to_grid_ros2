@@ -1,7 +1,4 @@
-import rclpy
-from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
-from sensor_msgs.msg import PointCloud2
 
 class PointXY:
     def __init__(self):

@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pointcloud_to_grid_node = pointcloud_to_grid.pointcloud_to_grid_node:main',
+            'interpolated_grid_node = pointcloud_to_grid.interpolated_grid_node:main',
         ],
     },
 )

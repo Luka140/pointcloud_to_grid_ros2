@@ -1,32 +1,34 @@
-# `pointcloud_to_grid` ROS package
-This package converts `sensor_msgs/PointCloud2` LIDAR data to `nav_msgs/OccupancyGrid` 2D map data based on intensity and / or height.
+# `pointcloud_to_grid` ROS2 package
+This python package converts `sensor_msgs/PointCloud2` LIDAR data to `nav_msgs/OccupancyGrid` 2D map data based on intensity and / or height
 ![](doc/grid_map01.gif)
 
 ## Build
 ```
-cd ~/catkin_ws/src 
-git clone https://github.com/jkk-research/pointcloud_to_grid
-catkin build pointcloud_to_grid
+cd ~/ament_python_ws/src 
+git clone https://github.com/wvu-robotics/pointcloud_to_grid_ros2.git
+colcon build
 ```
-Don't foget to `source ~/catkin_ws/devel/setup.bash`. *Note*: [`catkin tools`](https://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html) is recommended, but `catkin_make` also works.
+Don't forget to `source ~/ament_python_ws/install/setup.bash`. *Note*: [`colcon build`](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Colcon-Tutorial.html) is recommended
 
 
 ## Features
-- Few dependencies (ROS and PCL mainly) [ROS installation](http://wiki.ros.org/ROS/Installation)
+- Few dependencies (ROS2) [ROS2 installation](https://docs.ros.org/en/humble/Installation.html)
 - Simple as possible
 - Fast
+
+*Tested in ROS2 Humble, other distributions may work but not guaranteed*
 
 ## Conventions & definitions
 ![](doc/grid_map_conventions.svg)
 
 # Getting started
 
-Issue the following commands to start roscore, download and play sample data, and start the algorithm with visualization.
+Issue the following commands to play sample data, and start the algorithm with visualization.
 
-In a **new terminal** start roscore:
+In a **new terminal** run the `pc2_to_grid.launch.py` launch file:
 
 ```
-roscore
+ros2 launch pointcloud_to_grid pc2_to_grid.launch.py
 ```
 
 In a **new terminal** go to your bag folder (e.g. `~/Downloads`):
@@ -35,27 +37,18 @@ In a **new terminal** go to your bag folder (e.g. `~/Downloads`):
 cd ~/Downloads
 ```
 
-Download a sample rosbag (~3,3 GB):
-
-```r
-wget https://laesze-my.sharepoint.com/:u:/g/personal/herno_o365_sze_hu/EYl_ahy5pgBBhNHt5ZkiBikBoy_j_x95E96rDtTsxueB_A?download=1 -O leaf-2021-04-23-campus.bag
-```
-
 Play rosbag:
 
 ```r
-rosbag play -l ~/Downloads/leaf-2021-04-23-campus.bag
-```
-
-Start the algorithm in a **new terminal** :
-```r
-roslaunch pointcloud_to_grid demo.launch
+ros2 bag play -l ~/Downloads/your-bag-folder-name
 ```
 
 Start the visualization in a **new terminal** :
 ```r
-roslaunch pointcloud_to_grid rviz.launch
+rviz2
 ```
+
+Select the `Add` button located in the topic menu on the left. From the topic type options, choose `Map` and once it appears in the topic menu select either the intensity or height based occupancy grid.
 
 
 ## Related solutions
@@ -65,7 +58,6 @@ roslaunch pointcloud_to_grid rviz.launch
 
 ## Cite & paper
 
-If you use any of this code please consider citing TODO:
+Credit goes to [horverno](https://github.com/horverno), [mesmatyi](https://github.com/mesmatyi), and [szepilot](https://github.com/szepilot) on github for designing the algorithm this package uses, as well as creating a ROS implementation this package was based on.
 
-```bibtex
-```
+[Széchenyi University's Research Center's original package](https://github.com/jkk-research/pointcloud_to_grid)
