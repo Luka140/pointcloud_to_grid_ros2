@@ -75,12 +75,13 @@ class PointcloudToGridNode(Node):
 
     def pointcloud_callback(self, msg : PointCloud2):
         # Adjust grid dimensions
-        self.grid_map.length_x      = abs(self.max_x) + abs(self.min_x)
-        self.grid_map.length_y      = abs(self.max_y) + abs(self.min_y)
+        self.grid_map.length_x      = min(abs(self.max_x) + abs(self.min_x), 500)
+        self.grid_map.length_y      = min(abs(self.max_y) + abs(self.min_y), 500)
         self.grid_map.position_x    = (self.max_x + self.min_x)/2.0
         self.grid_map.position_y    = (self.max_y + self.min_y)/2.0
-        self.get_logger().error("Position X: " + str(self.grid_map.position_x))
-        self.get_logger().error("Position Y: " + str(self.grid_map.position_y))
+        self.get_logger().error("Max X: " + str(self.max_x) + " | Min X: " + str(self.min_x))
+        self.get_logger().error("Max Y: " + str(self.max_y) + " | Min Y: " + str(self.min_y))
+        self.get_logger().error("Position: (" + str(self.grid_map.position_x) + " , " + str(self.grid_map.position_y) + ")")
 
         self.grid_map.paramRefresh()
         
@@ -116,16 +117,22 @@ class PointcloudToGridNode(Node):
                             hpoints[cell.y * self.grid_map.cell_num_x + cell.x] = out_point.z * self.grid_map.height_factor
 
                         else:
-                            self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y), 5)
+                            self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y))
 
                     else:
                         isTop : bool
-                        if (out_point.y > self.grid_map.bottomright_y):
-                            diff    = abs(out_point.y - self.grid_map.bottomright_y)
-                            isTop   = False
-                        else:
+
+                        # If the point is out of the map in the +y direction
+                        if (out_point.y > self.grid_map.topleft_y):
+                            # Find the difference and record the side in which the point was over
                             diff    = abs(out_point.y - self.grid_map.topleft_y)
                             isTop   = True
+
+                        # If the point is out of the map in the -y direction
+                        else:
+                            # Find the difference and record the side in which the point was over
+                            diff    = abs(out_point.y - self.grid_map.bottomright_y)
+                            isTop   = False
 
                         if (self.grid_map.length_y + diff > abs(self.max_y) + abs(self.min_y)):
                             if isTop:
@@ -135,18 +142,24 @@ class PointcloudToGridNode(Node):
                 
                 else:
                     isTop : bool
-                    if (out_point.x > self.grid_map.bottomright_x):
-                        diff    = abs(out_point.x - self.grid_map.bottomright_x)
-                        isTop   = False
-                    else:
+
+                    # If the point is out of the map in the +x direction
+                    if (out_point.x > self.grid_map.topleft_x):
+                        # Find the difference and record the side in which the point was over
                         diff    = abs(out_point.x - self.grid_map.topleft_x)
                         isTop   = True
 
+                    # If the point is out of the map in the -x direction
+                    else:
+                        # Find the difference and record the side in which the point was over
+                        diff    = abs(out_point.x - self.grid_map.bottomright_x)
+                        isTop   = False
+
                     if (self.grid_map.length_x + diff > abs(self.max_x) + abs(self.min_x)):
                         if isTop:
-                            self.max_x = self.max_x + diff
+                            self.max_x = self.max_x - diff
                         else:
-                            self.min_x = self.min_x - diff
+                            self.min_x = self.min_x + diff
 
 
         # Adjust Grid Headers and set data
