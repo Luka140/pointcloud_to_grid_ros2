@@ -119,34 +119,37 @@ class PointcloudToGridNode(Node):
                             self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y), 5)
 
                     else:
-                        isTop : bool
-                        if (out_point.y > self.grid_map.bottomright_y):
-                            diff    = abs(out_point.y - self.grid_map.bottomright_y)
-                            isTop   = False
-                        else:
-                            diff    = abs(out_point.y - self.grid_map.topleft_y)
-                            isTop   = True
+                        # Check if the point is below the lowest known value
+                        if (out_point.y < self.min_y):
+                            # Set the minimum value 
+                            self.min_y = out_point.y
+                            self.get_logger().info("Out of bounds point is furthest known in negative Y direction")
+                        
+                        # Because it is out of bounds, it has to be above the top right corner then
+                        elif (out_point.y > self.max_y):
+                            # Calculate the distance out of the map it is and save what direction
+                            self.max_y = out_point.y
+                            self.get_logger().info("Out of bounds point is furthest known in positive Y direction")
 
-                        if (self.grid_map.length_y + diff > abs(self.max_y) + abs(self.min_y)):
-                            if isTop:
-                                self.max_y = self.max_y + diff
-                            else:
-                                self.min_y = self.min_y - diff
+                        else:
+                            self.get_logger().info("Out of bounds point is not the furthest out in either Y direction")
+
                 
                 else:
-                    isTop : bool
-                    if (out_point.x > self.grid_map.bottomright_x):
-                        diff    = abs(out_point.x - self.grid_map.bottomright_x)
-                        isTop   = False
-                    else:
-                        diff    = abs(out_point.x - self.grid_map.topleft_x)
-                        isTop   = True
+                    # Check if the point is below the lowest known value
+                        if (out_point.x < self.min_x):
+                            # Set the minimum value 
+                            self.min_x = out_point.x
+                            self.get_logger().info("Out of bounds point is furthest known in negative X direction")
+                        
+                        # Because it is out of bounds, it has to be above the top right corner then
+                        elif (out_point.x > self.max_x):
+                            # Calculate the distance out of the map it is and save what direction
+                            self.max_x = out_point.x
+                            self.get_logger().info("Out of bounds point is furthest known in positive X direction")
 
-                    if (self.grid_map.length_x + diff > abs(self.max_x) + abs(self.min_x)):
-                        if isTop:
-                            self.max_x = self.max_x + diff
                         else:
-                            self.min_x = self.min_x - diff
+                            self.get_logger().info("Out of bounds point is not the furthest out in either X direction")
 
 
         # Adjust Grid Headers and set data
