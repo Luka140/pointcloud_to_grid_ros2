@@ -75,12 +75,13 @@ class PointcloudToGridNode(Node):
 
     def pointcloud_callback(self, msg : PointCloud2):
         # Adjust grid dimensions
-        self.grid_map.length_x      = abs(self.max_x) + abs(self.min_x)
-        self.grid_map.length_y      = abs(self.max_y) + abs(self.min_y)
+        self.grid_map.length_x      = min(abs(self.max_x) + abs(self.min_x), 500)
+        self.grid_map.length_y      = min(abs(self.max_y) + abs(self.min_y), 500)
         self.grid_map.position_x    = (self.max_x + self.min_x)/2.0
         self.grid_map.position_y    = (self.max_y + self.min_y)/2.0
-        self.get_logger().error("Position X: " + str(self.grid_map.position_x))
-        self.get_logger().error("Position Y: " + str(self.grid_map.position_y))
+        self.get_logger().error("Max X: " + str(self.max_x) + " | Min X: " + str(self.min_x))
+        self.get_logger().error("Max Y: " + str(self.max_y) + " | Min Y: " + str(self.min_y))
+        self.get_logger().error("Position: (" + str(self.grid_map.position_x) + " , " + str(self.grid_map.position_y) + ")")
 
         self.grid_map.paramRefresh()
         
@@ -116,8 +117,9 @@ class PointcloudToGridNode(Node):
                             hpoints[cell.y * self.grid_map.cell_num_x + cell.x] = out_point.z * self.grid_map.height_factor
 
                         else:
-                            self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y), 5)
+                            self.get_logger().error("Cell out of range: " + str(cell.x) + " - " + str(self.grid_map.cell_num_x) + " ||| " + str(cell.y) + " - " + str(self.grid_map.cell_num_y))
 
+                    # If the point is out of bounds in the Y direction
                     else:
                         # Check if the point is below the lowest known value
                         if (out_point.y < self.min_y):
@@ -134,7 +136,7 @@ class PointcloudToGridNode(Node):
                         else:
                             self.get_logger().info("Out of bounds point is not the furthest out in either Y direction")
 
-                
+                # If the point is out of bounds in the X direction
                 else:
                     # Check if the point is below the lowest known value
                         if (out_point.x < self.min_x):

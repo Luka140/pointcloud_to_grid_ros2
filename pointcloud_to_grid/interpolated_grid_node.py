@@ -1,3 +1,5 @@
+import copy
+import copy
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
@@ -53,7 +55,9 @@ class InterpolatedGridNode(Node):
         self.swiss_grid = msg
 
         # Set the output map parameters to the same as the input ones
+        self.cheddar_grid = copy.deepcopy(self.swiss_grid)
         self.cheddar_grid = self.swiss_grid
+        self.cheddar_grid = copy.deepcopy(self.swiss_grid)
 
         # Extract width and length for ease of use
         self.cheddar_width    = self.cheddar_grid.info.width
@@ -64,7 +68,7 @@ class InterpolatedGridNode(Node):
 
         # For every point in the swiss grid test
         for point in range(0, len(self.swiss_grid.data)):
-
+        
             # Run the Pseudo Mean filter
             self.cheddar_grid.data.append(self.pseudo_mean(point))
 
