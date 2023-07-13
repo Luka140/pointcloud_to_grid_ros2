@@ -20,4 +20,4 @@ igrid_interpolation:
 hgrid_interpolation:
   ros__parameters:
     unresolved_grid: "/height_map"
-    interpolated_grid: "/interpolated_hmap"
+    interpolated_grid: "/map"
