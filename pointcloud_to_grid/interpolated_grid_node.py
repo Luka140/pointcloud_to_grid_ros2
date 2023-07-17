@@ -1,9 +1,7 @@
 import copy
-import copy
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
-from sensor_msgs.msg import PointCloud2
 from rclpy.qos import DurabilityPolicy, qos_profile_system_default
 import math
 
