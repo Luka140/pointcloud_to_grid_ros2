@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
 from sensor_msgs.msg import PointCloud2
-from rclpy.qos import DurabilityPolicy, qos_profile_system_default
+from rclpy.qos import DurabilityPolicy, qos_profile_system_default, ReliabilityPolicy
 import math
 import numpy as np
 from pointcloud_to_grid.pointcloud_to_grid_core import GridMap, PointXY, PointXYZI
@@ -32,7 +32,10 @@ class PointcloudToGridNode(Node):
         self.declare_parameter("height_factor", 1.0)
         self.declare_parameter("mapi_topic_name", "/lidargrid_i")
         self.declare_parameter("maph_topic_name", "/lidargrid_h")
+        self.declare_parameter("qos_best_effort", "")
 
+        self.qos_best_effort = bool(self.get_parameter("qos_best_effort").get_parameter_value().string_value)
+        
         # Save all the parameters to the GridMap object
         self.grid_map.cell_size         = self.get_parameter("cell_size").get_parameter_value().double_value
         self.grid_map.position_x        = self.get_parameter("position_x").get_parameter_value().double_value
@@ -45,6 +48,7 @@ class PointcloudToGridNode(Node):
         self.grid_map.mapi_topic_name   = self.get_parameter("mapi_topic_name").get_parameter_value().string_value
         self.grid_map.maph_topic_name   = self.get_parameter("maph_topic_name").get_parameter_value().string_value
 
+
         self.max_x  = (self.grid_map.length_x)/2 + self.grid_map.position_x
         self.min_x  = -(self.grid_map.length_x)/2 + self.grid_map.position_x
         self.max_y  = (self.grid_map.length_y)/2 + self.grid_map.position_y
@@ -54,9 +58,15 @@ class PointcloudToGridNode(Node):
         self.grid_map.initGrid(self.intensity_grid)
         self.grid_map.initGrid(self.height_grid)
         self.grid_map.paramRefresh()
-
+        
         adjusted_policy = qos_profile_system_default
-        adjusted_policy.durability = DurabilityPolicy.TRANSIENT_LOCAL
+        if self.qos_best_effort:
+            adjusted_policy.reliability = ReliabilityPolicy.BEST_EFFORT
+        
+        # adjusted_policy.durability = DurabilityPolicy.TRANSIENT_LOCAL
+        adjusted_policy.durability = DurabilityPolicy.VOLATILE
+
+        self.get_logger().info(f"{adjusted_policy}")
 
         # Set up Intensity base Grid Publisher
         self.publish_igrid = self.create_publisher(
@@ -70,8 +80,10 @@ class PointcloudToGridNode(Node):
 
         # Set up PC2 Subscriber
         self.sub_pc2 = self.create_subscription(
-            PointCloud2, self.grid_map.cloud_in_topic, self.pointcloud_callback, 1
+            PointCloud2, self.grid_map.cloud_in_topic, self.pointcloud_callback, qos_profile=adjusted_policy
         )
+
+        self.get_logger().info(f"Pointcloud to grid node initiated, listening to the '{self.grid_map.cloud_in_topic}' topic")
 
     def pointcloud_callback(self, msg : PointCloud2):
         # Adjust grid dimensions
@@ -90,9 +102,9 @@ class PointcloudToGridNode(Node):
         else:
             self.grid_map.position_y = np.sign(self.max_y + self.min_y) * 210
 
-        self.get_logger().error("Max X: " + str(self.max_x) + " | Min X: " + str(self.min_x))
-        self.get_logger().error("Max Y: " + str(self.max_y) + " | Min Y: " + str(self.min_y))
-        self.get_logger().error("Position: (" + str(self.grid_map.position_x) + " , " + str(self.grid_map.position_y) + ")")
+        # self.get_logger().info("Max X: " + str(self.max_x) + " | Min X: " + str(self.min_x))
+        # self.get_logger().info("Max Y: " + str(self.max_y) + " | Min Y: " + str(self.min_y))
+        # self.get_logger().info("Position: (" + str(self.grid_map.position_x) + " , " + str(self.grid_map.position_y) + ")")
 
         self.grid_map.paramRefresh()
         
@@ -166,7 +178,8 @@ class PointcloudToGridNode(Node):
 
 
         # Adjust Grid Headers and set data
-        now = self.get_clock().now().to_msg()
+        # now = self.get_clock().now().to_msg()
+        now = msg.header.stamp
 
         self.intensity_grid.header.stamp        = now
         self.intensity_grid.header.frame_id     = msg.header.frame_id
